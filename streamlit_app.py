@@ -3,10 +3,12 @@ Motion RAG Assistant - Streamlit Frontend
 Attorney interface for motion strategy and drafting
 """
 import streamlit as st
+import streamlit_authenticator as stauth
 import requests
 from datetime import datetime
 from pathlib import Path
 import json
+import yaml
 
 # Configuration
 API_URL = "http://localhost:8000"
@@ -660,13 +662,60 @@ def render_manage_page():
                 st.write(f"- {mtype.replace('_', ' ').title()}: {count}")
 
 
+# ============== Authentication ==============
+
+def load_auth_config():
+    """Load authentication configuration from YAML file"""
+    config_path = Path(__file__).parent / "auth_config.yaml"
+    if not config_path.exists():
+        st.error("Authentication configuration not found. Please create auth_config.yaml from auth_config.yaml.example")
+        st.stop()
+
+    with open(config_path) as file:
+        return yaml.safe_load(file)
+
+
 # ============== Main ==============
 
 def main():
+    # Load authentication config
+    config = load_auth_config()
+
+    # Initialize authenticator
+    authenticator = stauth.Authenticate(
+        config['credentials'],
+        config['cookie']['name'],
+        config['cookie']['key'],
+        config['cookie']['expiry_days'],
+        config.get('preauthorized', {})
+    )
+
+    # Render login form
+    name, authentication_status, username = authenticator.login('Login', 'main')
+
+    if authentication_status == False:
+        st.error('Username/password is incorrect')
+        return
+
+    if authentication_status == None:
+        st.warning('Please enter your username and password')
+        return
+
+    # User is authenticated - proceed with app
     init_session_state()
-    
+
+    # Store user info in session
+    st.session_state['username'] = username
+    st.session_state['name'] = name
+
     page = render_sidebar()
-    
+
+    # Add logout button to sidebar
+    with st.sidebar:
+        st.markdown("---")
+        st.markdown(f"**Logged in as:** {name}")
+        authenticator.logout('Logout', 'sidebar')
+
     if page == "🔍 Search Motions":
         render_search_page()
     elif page == "💬 Strategy Chat":

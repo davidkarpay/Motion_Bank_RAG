@@ -4,6 +4,7 @@
 *.env
 secrets/
 credentials/
+auth_config.yaml
 
 # Legal Documents & Client Data
 data/

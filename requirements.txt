@@ -13,6 +13,7 @@ requests>=2.31.0
 
 # Frontend
 streamlit>=1.30.0
+streamlit-authenticator>=0.3.0
 
 # Document Processing
 PyMuPDF>=1.23.0  # fitz for PDF
